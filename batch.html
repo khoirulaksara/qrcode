@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>QR Code Massal + ZIP</title>
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      #qrContainer {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .qr-item {
+        text-align: center;
+      }
+      canvas {
+        margin-bottom: 10px;
+      }
+      input[type="file"],
+      button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>QR Code Generator Massal (CSV + ZIP)</h2>
+    <p>Upload file CSV dengan kolom <strong>kode</strong>:</p>
+    <input type="file" id="csvFile" accept=".csv" />
+    <br />
+    <button id="downloadZipBtn" disabled>Download Semua (ZIP)</button>
+
+    <div id="qrContainer"></div>
+
+    <script>
+      const qrList = [];
+
+      document
+        .getElementById("csvFile")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function (results) {
+              generateQRCodes(results.data);
+            },
+          });
+        });
+
+      document
+        .getElementById("downloadZipBtn")
+        .addEventListener("click", async () => {
+          const zip = new JSZip();
+
+          for (const item of qrList) {
+            // Buat canvas sementara untuk render QR
+            const canvas = document.createElement("canvas");
+            canvas.width = 300;
+            canvas.height = 300;
+            await item.qr.append(canvas);
+
+            // Konversi canvas ke blob
+            const blob = await new Promise((resolve) =>
+              canvas.toBlob((b) => resolve(b), "image/png")
+            );
+
+            zip.file(`${item.kode}.png`, blob);
+          }
+
+          zip.generateAsync({ type: "blob" }).then(function (content) {
+            saveAs(content, "qr-codes.zip");
+          });
+        });
+
+      function generateQRCodes(data) {
+        const container = document.getElementById("qrContainer");
+        container.innerHTML = "";
+        qrList.length = 0;
+
+        data.forEach((row) => {
+          const kode = row.kode?.trim();
+          if (!kode) return;
+
+          const qrCode = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            data: kode,
+            dotsOptions: {
+              type: "dots",
+              color: "#000000",
+            },
+            cornersSquareOptions: {
+              type: "circle",
+              color: "#000000",
+            },
+            cornersDotOptions: {
+              type: "dot",
+              color: "#000000",
+            },
+            backgroundOptions: {
+              color: "transparent",
+            },
+            image: "logo.webp",
+            imageOptions: {
+              crossOrigin: "anonymous",
+              margin: 6,
+              imageSize: 0.25,
+            },
+          });
+
+          const qrItem = document.createElement("div");
+          qrItem.className = "qr-item";
+
+          const qrDiv = document.createElement("div");
+          qrCode.append(qrDiv);
+
+          const label = document.createElement("p");
+          label.innerText = kode;
+
+          qrItem.appendChild(qrDiv);
+          qrItem.appendChild(label);
+          container.appendChild(qrItem);
+
+          qrList.push({ kode, qr: qrCode });
+        });
+
+        document.getElementById("downloadZipBtn").disabled =
+          qrList.length === 0;
+      }
+    </script>
+  </body>
+</html>

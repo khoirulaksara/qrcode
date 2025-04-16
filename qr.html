@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>QR Transparan</title>
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      #qrcode {
+        width: 300px;
+        height: 300px;
+        margin: auto;
+        position: relative;
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>QR Code Transparent Background</h2>
+    <div id="qrcode"></div>
+    <button id="download">Download QR</button>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const kode = urlParams.get("kode") || "default";
+
+      const qrCode = new QRCodeStyling({
+        width: 300,
+        height: 300,
+        data: kode,
+        dotsOptions: {
+          type: "dots",
+          color: "#000000",
+        },
+        cornersSquareOptions: {
+          type: "circle",
+          color: "#000000",
+        },
+        cornersDotOptions: {
+          type: "dot",
+          color: "#000000",
+        },
+        backgroundOptions: {
+          color: "transparent", // ← Transparan di sini
+        },
+        image: "logo.webp",
+        imageOptions: {
+          crossOrigin: "anonymous",
+          margin: 6,
+          imageSize: 0.25,
+        },
+      });
+
+      qrCode.append(document.getElementById("qrcode"));
+      qrCode.update({ data: kode });
+
+      document.getElementById("download").addEventListener("click", () => {
+        qrCode.download({ name: kode, extension: "png" });
+      });
+    </script>
+  </body>
+</html>
